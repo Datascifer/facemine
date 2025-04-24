@@ -1,4 +1,4 @@
-# Facial Emotion Recognition (Facemine)
+# Facial Emotion Recognition (FaceMine)
 
 An AI project that learns to identify eight different facial emotions—like happiness, anger, surprise, and sadness—by training on two large photo collections (FER-2013 and CK+) and using smart techniques to ensure even rare expressions are recognized accurately.
 
@@ -41,17 +41,18 @@ An AI project that learns to identify eight different facial emotions—like hap
 
 ## Dataset
 
-This project uses two datasets:
-
-- **FER-2013**: Public benchmark of 48×48 grayscale images labeled with 7 emotions.
-- **CK+**: Laboratory-controlled dataset with finely annotated facial expressions.
-
-Datasets are automatically downloaded using `kagglehub`:
-```python
-import kagglehub
-path_fer = kagglehub.dataset_download("msambare/fer2013")
-path_ck  = kagglehub.dataset_download("davilsena/ckdataset")
-```
+> **Do Not Commit Data to GitHub**
+>
+> 1. **Ignore the data folder.** Add `data/` to your `.gitignore`.
+> 2. **Download datasets at runtime.** Use the provided script:
+>    ```bash
+>    python scripts/download_datasets.py
+>    ```
+> 3. **Verify your data directory.** After running the script, ensure you have:
+>    - `data/fer2013/` containing the FER-2013 images (with `train/` and `test/` subfolders)
+>    - `data/ckplus/` containing the CK+ dataset and `ckextended.csv`
+>
+> If your data directory is named differently, update paths in `train.py` and the notebooks accordingly.
 
 ## Exploratory Data Analysis
 
