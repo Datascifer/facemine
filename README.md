@@ -6,66 +6,71 @@ An AI project that learns to identify eight different facial emotions—like hap
 
 ## Table of Contents
 
-- [Features](#features)
-- [Installation](#installation)
-- [Dataset](#dataset)
-- [Exploratory Data Analysis](#exploratory-data-analysis)
-- [Models](#models)
-- [Usage](#usage)
-- [Training](#training)
-- [Evaluation](#evaluation)
-- [Results](#results)
-- [Repository Structure](#repository-structure)
-- [Scripts](#scripts)
-- [Contributing](#contributing)
-- [License](#license)
+- [Features](#features)  
+- [Installation](#installation)  
+- [Dataset](#dataset)  
+- [Exploratory Data Analysis](#exploratory-data-analysis)  
+- [Models](#models)  
+- [Usage](#usage)  
+- [Training](#training)  
+- [Evaluation](#evaluation)  
+- [Results](#results)  
+- [Repository Structure](#repository-structure)  
+- [Contributing](#contributing)  
+- [License](#license)  
 
 ---
 
 ## Features
 
-- **Combined Dataset**: Merges FER-2013 (in-the-wild images) and CK+ (lab-controlled images) for 8 emotion classes.
-- **Five Architectures**:  
-  - **MyCNN** – A compact, custom CNN built from scratch.  
-  - **MyCNNv2** – Expanded baseline CNN with three convolutional blocks and configurable dropout.  
-  - **ResNet-18** – Fine-tuned on ImageNet, adapted to 1×48×48 grayscale.  
-  - **VGG-16** (benchmark) – Pretrained VGG-16 backbone, classifier head replaced for emotion logits.  
-  - **DenseNet-121** (benchmark) – Pretrained DenseNet-121 backbone, classifier head replaced.  
-- **Imbalance Mitigation**: WeightedRandomSampler and data augmentation to handle rare classes.
-- **Robust Validation**: 5-fold cross-validation with learning-rate scheduling.
-- **End-to-End Scripts**: Download, train, and evaluate all models with a single CLI.
+- **Combined Dataset**: Merges FER-2013 (in-the-wild images) and CK+ (lab-controlled images) for 8 emotion classes.  
+- **Six Architectures**:  
+  1. **MyCNN** – Baseline CNN built from scratch (2025).  
+  2. **MyCNNv2** – Expanded 3-block CNN with dynamic flattening (2025).  
+  3. **EmotionResNet18** – Fine-tuned ResNet-18 for 1×48×48 grayscale (2025).  
+  4. **Ma2024CNN** – “Convolutional Neural Networks-based Evaluation for the FER-2013 and Revised CK+ Datasets” architecture from Ma (2024).  
+  5. **EmotionVGG16** – Fine-tuned VGG-16 adapted for grayscale (2025).  
+  6. **EmotionDenseNet121** – Fine-tuned DenseNet-121 adapted for grayscale (2025).  
+- **Imbalance Mitigation**: Weighted sampling and data augmentation to handle rare classes.  
+- **Validation**: 5-fold cross-validation, hyper­parameter tuning, and learning-rate scheduling.  
+- **Unified Evaluation**: Single script reports overall accuracy, macro F1, per-class metrics, and confusion matrices.  
 
 ---
 
 ## Installation
 
-```bash
-git clone https://github.com/yourusername/fer-emotion-recognition.git
-cd fer-emotion-recognition
-pip install -r requirements.txt
-```
+1. **Clone the repository**  
+   ```bash
+   git clone https://github.com/yourusername/fer-emotion-recognition.git
+   cd fer-emotion-recognition
+   ```
+
+2. **Install dependencies**  
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ---
 
 ## Dataset
 
 > **Do Not Commit Data to GitHub**  
-> - Add `data/` to `.gitignore`.  
-> - Download at runtime via:
->   ```bash
->   python scripts/download_datasets.py
->   ```
-> - After running, you should have:  
->   ```
->   data/
->   ├─ fer2013/
->   │  ├─ train/
->   │  └─ test/
->   └─ ckplus/
->      └─ ckextended.csv
->   ```  
-
-If you rename your data folders, update paths in `train.py` and `scripts/evaluate_models.py`.
+>
+> 1. **.gitignore** includes `data/`.  
+> 2. **Download at runtime**:  
+>    ```bash
+>    python scripts/download_datasets.py
+>    ```
+> 3. **Expected structure** under `data/`:  
+>    ```
+>    data/
+>    ├── fer2013/
+>    │   ├── train/
+>    │   └── test/
+>    └── ckplus/
+>        └── ckeextended.csv
+>    ```
+> 4. If your folders differ, update paths in `train.py` and `scripts/evaluate_models.py`.
 
 ---
 
@@ -75,55 +80,61 @@ See `notebooks/EDA.ipynb` for:
 
 - Sample frames from each dataset  
 - Class distribution histograms  
-- Combined dataset summary  
+- Combined dataset summary tables  
 
 ---
 
 ## Models
 
-| Model           | Description                                                                                       |
-| --------------- | ------------------------------------------------------------------------------------------------- |
-| **MyCNN**       | Two convolutional layers + pooling → two FC layers (baseline).                                    |
-| **MyCNNv2**     | Three conv-batchnorm-ReLU blocks → one FC head; configurable dropout.                             |
-| **ResNet-18**   | ImageNet-pretrained, first conv adapted to grayscale 48×48, fine-tuned on last block + classifier.|
-| **VGG-16**      | ImageNet-pretrained VGG-16, first conv swapped for 1-channel, classifier rebuilt for 8 outputs.   |
-| **DenseNet-121**| ImageNet-pretrained DenseNet-121, first conv swapped for 1-channel, classifier rebuilt.           |
+We compare six model architectures for facial emotion recognition:
 
-> **Note on Kaggle code references**  
-> We reviewed several Kaggle notebooks (e.g. VGG16, InceptionResNetV2, DenseNet121 tutorials) to guide our benchmark model definitions and evaluation metrics—only the model‐init and CI pipelines were adapted; the core PyTorch training loops and data handling remain our own.
+| Model           | Description                                                                                             | Source                          |
+|-----------------|---------------------------------------------------------------------------------------------------------|---------------------------------|
+| **MyCNN**       | Two conv-pool blocks + two FC layers, built from scratch.                                               | `models/mycnn.py`               |
+| **MyCNNv2**     | Three conv-pool blocks, dynamic flatten, configurable dropout, Kaiming/Xavier init.                     | `models/mycnnv2.py`             |
+| **ResNet-18**   | Pretrained ResNet-18 stem modified for 1×48×48, freeze layers except last block & head.                | `models/resnet18.py`            |
+| **Ma2024CNN**   | CNN from Ma (2024): data-driven evaluation on FER-2013 & CK+, uses normalization & augmentation.        | `models/ma2024cnn.py`           |
+| **VGG-16**      | Pretrained VGG-16 modified for grayscale input, freeze early conv blocks, new classifier head.         | `models/vgg16.py`               |
+| **DenseNet121** | Pretrained DenseNet-121 modified for grayscale, freeze all but last dense block & classifier.          | `models/densenet121.py`         |
+
+**Techniques across all models**:
+
+- **Data Augmentation**: flips, rotations, zooms  
+- **Regularization**: Dropout (p=0.5), L2 weight decay, BatchNorm  
+- **Optimization**: AdamW, learning-rate scheduling  
 
 ---
 
 ## Usage
 
-Train any model with:
+### 1. Download datasets  
+```bash
+python scripts/download_datasets.py
+```
 
+### 2. Train a model  
 ```bash
 python train.py \
   --model resnet18 \
   --batch_size 32 \
   --epochs 20 \
-  --lr 5e-4
+  --lr 1e-3
 ```
-
-Replace `--model` with `mycnn`, `mycnnv2`, `branchcnn`, `vgg16` or `densenet121`.
+Replace `--model` with one of `mycnn`, `mycnnv2`, `resnet18`, `ma2024cnn`, `vgg16`, or `densenet121`.
 
 ---
 
 ## Training
 
-Key strategies:
-
-- **Pretraining**: Leveraging ImageNet weights for ResNet-18, VGG-16, DenseNet-121.  
-- **Regularization**: Dropout (p=0.5), L2 weight decay, batch normalization.  
-- **Sampling**: `WeightedRandomSampler` to counter severe class imbalance (e.g. “contempt” with only 14 samples).  
-- **Validation**: 5-fold CV with `ReduceLROnPlateau` scheduling.
+- **Pretraining**: leverage ImageNet weights where applicable  
+- **Sampler**: `WeightedRandomSampler` for class imbalance  
+- **Validation**: 5-fold CV, `ReduceLROnPlateau` scheduler  
 
 ---
 
 ## Evaluation
 
-We provide a comprehensive evaluation script:
+After training, place your best checkpoints into `checkpoints/` (e.g. `best_resnet18.pth`, `best_ma2024cnn.pth`, etc.), then:
 
 ```bash
 python scripts/evaluate_models.py \
@@ -132,84 +143,75 @@ python scripts/evaluate_models.py \
   --batch_size 32
 ```
 
-For each model (`mycnn`, `resnet18`, `branchcnn`, `vgg16`, `densenet121`), it reports:
+This script will, for each model:
 
-- **Overall Accuracy** & **Macro F1**  
-- **Per-class** precision, recall, F1  
-- **Confusion Matrix**  
+- Compute **Overall Accuracy** & **Macro F1**  
+- Print **Per-class Precision / Recall / F1**  
+- Display the **Confusion Matrix**
 
 ---
 
 ## Results
 
-After running `evaluate_models.py`, you’ll get a table like:
+Here’s a sample of 5-fold cross-validation on **ResNet-18**:
 
-| Model           | Accuracy | F1-macro |
-| --------------- | -------- | -------- |
-| MyCNN           | 0.51     | 0.40     |
-| ResNet-18       | 0.52     | 0.42     |
-| VGG-16          | 0.55     | 0.45     |
-| DenseNet-121    | 0.54     | 0.44     |
-| MultiBranchCNN  | 0.53     | 0.43     |
+| Fold | Accuracy | F1-macro |
+|:----:|:--------:|:--------:|
+| 1    | 0.52     | 0.42     |
+| 2    | 0.50     | 0.39     |
+| 3    | 0.51     | 0.40     |
+| 4    | 0.53     | 0.42     |
+| 5    | 0.51     | 0.40     |
+| **Avg** | **0.51** | **0.41** |
 
-(Your exact numbers may vary with hyperparameter tuning.)
-
-See full per-class reports and confusion matrices in the console output of `scripts/evaluate_models.py`.
+Compare against **Ma 2024 CNN** and other benchmarks listed in [docs/LITERATURE_REVIEW.md].
 
 ---
 
 ## Repository Structure
 
 ```
-├── data/                      # Datasets (ignored by Git)
-├── notebooks/                 # EDA and analysis notebooks
-│   └── EDA.ipynb
-├── models/                    # Model definitions
+├── data/                    # Downloaded datasets (ignored in Git)
+├── docs/                    # Supplementary docs (e.g., literature review)
+├── models/                  # All model definition modules
 │   ├── mycnn.py
 │   ├── mycnnv2.py
 │   ├── resnet18.py
-│   ├── branchcnn.py
+│   ├── ma2024cnn.py
 │   ├── vgg16.py
 │   └── densenet121.py
+├── notebooks/               # Jupyter notebooks for EDA and analysis
+│   └── EDA.ipynb
 ├── scripts/
-│   ├── download_datasets.py   # Download FER-2013 & CK+ via Kaggle API
-│   └── evaluate_models.py     # Aggregates evaluation metrics across all models
-├── train.py                   # Main training & CV entrypoint
-├── requirements.txt           # Exact Python package versions
-├── README.md                  # This file
-└── LICENSE
+│   ├── download_datasets.py # Downloads FER-2013 & CK+ via Kaggle API
+│   └── evaluate_models.py   # Unified evaluation reporting metrics & CM
+├── train.py                 # Main training & validation entrypoint
+├── requirements.txt         # Python package dependencies
+├── README.md                # Project overview and instructions
+└── LICENSE                  # MIT license
 ```
-
----
-
-## Scripts
-
-- **download_datasets.py**  
-  ```bash
-  python scripts/download_datasets.py
-  ```
-
-- **evaluate_models.py**  
-  ```bash
-  python scripts/evaluate_models.py --data_dir data --ckpt_dir checkpoints
-  ```
 
 ---
 
 ## Contributing
 
-1. **Fork** & branch:  
-   ```
-   git checkout -b feature/YourFeature
-   ```
-2. **Implement** & test.
-3. **Commit** with clear messages.  
-4. **Push** & open a PR.
+We welcome contributions! Please:
 
-Also update docs/notebooks as needed.
+1. **Fork** & create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+2. **Implement** & **test** your changes.  
+3. **Commit** with descriptive messages:
+   ```bash
+   git commit -m "Add MultiBranchCNN improvements"
+   ```
+4. **Push** & open a **Pull Request**.
+
+Remember to update docs or notebooks if functionality changes.
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+This project is released under the **MIT License**. See [LICENSE](LICENSE) for details.
