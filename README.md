@@ -1,4 +1,4 @@
-# Facial Emotion Recognition
+# Facial Emotion Recognition (FaceMine)
 
 An AI project that learns to identify eight different facial emotions—like happiness, anger, surprise, and sadness—by training on two large photo collections (FER-2013 and CK+) and using smart techniques to ensure even rare expressions are recognized accurately.
 
@@ -63,8 +63,17 @@ The `notebooks/EDA.ipynb` contains:
 
 ## Models
 
-- **MyCNN**: Two-convolutional-layer network with dropout and batch normalization.
-- **ResNet-18**: Pretrained on ImageNet, modified stem for single-channel input, fine-tuned on combined dataset.
+This project implements and compares three model architectures for facial emotion recognition:
+
+1. **Baseline CNN** – A simple convolutional network built from scratch (`MyCNN`), with two convolutional layers, pooling, and fully connected layers.
+2. **Fine-Tuned CNN** – A pretrained ResNet-18 model (ImageNet weights) adapted for grayscale input and fine-tuned on the combined dataset.
+3. **Multi-Branch CNN** – A custom architecture with specialized branches for extracting different feature types (e.g., texture vs. shape), merged before classification.
+
+**Techniques Used Across Models:**
+
+- **Data Augmentation:** Random flips, rotations, and scaling to simulate real-world variations.
+- **Regularization:** Dropout (p=0.5), L2 weight decay, and batch normalization to reduce overfitting.
+- **Optimization:** Experiments with AdamW and SGD optimizers, along with learning-rate tuning and scheduling.
 
 ## Usage
 
@@ -152,3 +161,4 @@ Please also update documentation (this README or notebooks) to reflect any chang
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
