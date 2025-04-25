@@ -1,4 +1,4 @@
-# Facial Emotion Recognition (FaceMine)
+# Facial Emotion Recognition
 
 An AI project that learns to identify eight different facial emotions—like happiness, anger, surprise, and sadness—by training on two large photo collections (FER-2013 and CK+) and using smart techniques to ensure even rare expressions are recognized accurately.
 
@@ -97,24 +97,58 @@ Compare these to published baselines in the [Literature Review](docs/LITERATURE_
 
 ## Repository Structure
 
+The repository is organized as follows:
+
 ```
-├── data/                   # Downloaded datasets
-├── notebooks/              # EDA and analysis notebooks
-│   └── EDA.ipynb
-├── models/                 # Model definitions and architectures
-│   ├── mycnn.py
-│   └── resnet18.py
-├── train.py                # Training and evaluation script
-├── requirements.txt        # Python dependencies
-├── README.md
-└── LICENSE
+├── data/                   # Downloaded datasets (ignored in Git)
+├── notebooks/              # Jupyter notebooks for EDA and analysis
+│   └── EDA.ipynb           # Exploratory Data Analysis
+├── models/                 # Model definition modules
+│   ├── mycnn.py            # Implementation of the custom CNN architecture
+│   └── resnet18.py         # Fine-tuned ResNet-18 model class
+├── scripts/                # Utility scripts
+│   └── download_datasets.py # Script to download FER-2013 and CK+ datasets
+├── train.py                # Main training and evaluation entrypoint
+├── requirements.txt        # List of Python package dependencies
+├── README.md               # Project overview and instructions
+└── LICENSE                 # License information
 ```
+
+- **data/**: Contains raw dataset folders after running `download_datasets.py`. This directory is added to `.gitignore` to avoid committing large data files.
+- **notebooks/**: Includes analysis notebooks for visualizing sample images and class distributions.
+- **models/**: Holds the model architecture code, allowing easy imports and modifications.
+- **scripts/**: Utility scripts to automate dataset downloading and setup.
+- **train.py**: Orchestrates data loading, model instantiation, training loops, evaluation, and result logging based on CLI arguments.
+- **requirements.txt**: Ensures reproducible environments by specifying exact package versions.
+- **LICENSE**: Details the MIT licensing terms for this project.
+## Scripts
+
+Utility scripts are provided in the `scripts/` directory:
+
+- **download_datasets.py**: Downloads the FER-2013 and CK+ datasets into `data/fer2013/` and `data/ckplus/`, respectively. Run:
+  ```bash
+  python scripts/download_datasets.py
+  ```
+
+Be sure to update any paths in your own code if you rename the `data/` folder.
 
 ## Contributing
 
-Contributions are welcome! Please open issues or submit pull requests for bug fixes, new features, or improvements.
+Contributions are welcome! Please follow these steps:
+
+1. **Fork** this repository and create a new branch:
+   ```bash
+   git checkout -b feature/YourFeature
+   ```
+2. **Develop** your feature or bugfix, ensuring code style consistency and adding tests where appropriate.
+3. **Commit** your changes with clear, descriptive messages:
+   ```bash
+   git commit -m "Add <feature description>"
+   ```
+4. **Push** your branch to GitHub and open a **Pull Request**, describing your changes and referencing related issues.
+
+Please also update documentation (this README or notebooks) to reflect any changes in functionality.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
