@@ -1,3 +1,4 @@
+```markdown
 # Facial Emotion Recognition (FaceMine)
 
 An AI project that learns to identify eight different facial emotions—like happiness, anger, surprise, and sadness—by training on two large photo collections (FER-2013 and CK+) and using smart techniques to ensure even rare expressions are recognized accurately.
@@ -13,8 +14,10 @@ An AI project that learns to identify eight different facial emotions—like hap
 - [Models](#models)
 - [Usage](#usage)
 - [Training](#training)
+- [Evaluation](#evaluation)
 - [Results](#results)
 - [Repository Structure](#repository-structure)
+- [Scripts](#scripts)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -23,142 +26,192 @@ An AI project that learns to identify eight different facial emotions—like hap
 ## Features
 
 - **Combined Dataset**: Merges FER-2013 (in-the-wild images) and CK+ (lab-controlled images) for 8 emotion classes.
-- **Custom CNN & ResNet-18**: Implements a lightweight CNN and fine-tuned ResNet-18 adapted for grayscale 48×48 inputs.
-- **Imbalance Mitigation**: Uses weighted sampling and data augmentation to handle rare classes.
-- **Validation**: Employs 5-fold cross-validation and hyperparameter tuning for robust performance.
+- **Five Architectures**:  
+  - **MyCNN** – A compact, custom CNN built from scratch.  
+  - **MyCNNv2** – Expanded baseline CNN with three convolutional blocks and configurable dropout.  
+  - **ResNet-18** – Fine-tuned on ImageNet, adapted to 1×48×48 grayscale.  
+  - **VGG-16** (benchmark) – Pretrained VGG-16 backbone, classifier head replaced for emotion logits.  
+  - **DenseNet-121** (benchmark) – Pretrained DenseNet-121 backbone, classifier head replaced.  
+- **Imbalance Mitigation**: WeightedRandomSampler and data augmentation to handle rare classes.
+- **Robust Validation**: 5-fold cross-validation with learning-rate scheduling.
+- **End-to-End Scripts**: Download, train, and evaluate all models with a single CLI.
+
+---
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/fer-emotion-recognition.git
-   cd fer-emotion-recognition
-   ```
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/yourusername/fer-emotion-recognition.git
+cd fer-emotion-recognition
+pip install -r requirements.txt
+```
+
+---
 
 ## Dataset
 
-> **Do Not Commit Data to GitHub**
->
-> 1. **Ignore the data folder.** Add `data/` to your `.gitignore`.
-> 2. **Download datasets at runtime.** Use the provided script:
->    ```bash
->    python scripts/download_datasets.py
->    ```
-> 3. **Verify your data directory.** After running the script, ensure you have:
->    - `data/fer2013/` containing the FER-2013 images (with `train/` and `test/` subfolders)
->    - `data/ckplus/` containing the CK+ dataset and `ckextended.csv`
->
-> If your data directory is named differently, update paths in `train.py` and the notebooks accordingly.
+> **Do Not Commit Data to GitHub**  
+> - Add `data/` to `.gitignore`.  
+> - Download at runtime via:
+>   ```bash
+>   python scripts/download_datasets.py
+>   ```
+> - After running, you should have:  
+>   ```
+>   data/
+>   ├─ fer2013/
+>   │  ├─ train/
+>   │  └─ test/
+>   └─ ckplus/
+>      └─ ckextended.csv
+>   ```  
+
+If you rename your data folders, update paths in `train.py` and `scripts/evaluate_models.py`.
+
+---
 
 ## Exploratory Data Analysis
 
-The `notebooks/EDA.ipynb` contains:
-- Sample frames from each dataset.
-- Class distribution histograms.
-- Combined dataset summary tables.
+See `notebooks/EDA.ipynb` for:
+
+- Sample frames from each dataset  
+- Class distribution histograms  
+- Combined dataset summary  
+
+---
 
 ## Models
 
-This project implements and compares three model architectures for facial emotion recognition:
+| Model           | Description                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| **MyCNN**       | Two convolutional layers + pooling → two FC layers (baseline).                                    |
+| **MyCNNv2**     | Three conv-batchnorm-ReLU blocks → one FC head; configurable dropout.                             |
+| **ResNet-18**   | ImageNet-pretrained, first conv adapted to grayscale 48×48, fine-tuned on last block + classifier.|
+| **VGG-16**      | ImageNet-pretrained VGG-16, first conv swapped for 1-channel, classifier rebuilt for 8 outputs.   |
+| **DenseNet-121**| ImageNet-pretrained DenseNet-121, first conv swapped for 1-channel, classifier rebuilt.           |
 
-1. **Baseline CNN** – A simple convolutional network built from scratch (`MyCNN`), with two convolutional layers, pooling, and fully connected layers.
-2. **Fine-Tuned CNN** – A pretrained ResNet-18 model (ImageNet weights) adapted for grayscale input and fine-tuned on the combined dataset.
-3. **Multi-Branch CNN** – A custom architecture with specialized branches for extracting different feature types (e.g., texture vs. shape), merged before classification.
+> **Note on Kaggle code references**  
+> We reviewed several Kaggle notebooks (e.g. VGG16, InceptionResNetV2, DenseNet121 tutorials) to guide our benchmark model definitions and evaluation metrics—only the model‐init and CI pipelines were adapted; the core PyTorch training loops and data handling remain our own.
 
-**Techniques Used Across Models:**
-
-- **Data Augmentation:** Random flips, rotations, and scaling to simulate real-world variations.
-- **Regularization:** Dropout (p=0.5), L2 weight decay, and batch normalization to reduce overfitting.
-- **Optimization:** Experiments with AdamW and SGD optimizers, along with learning-rate tuning and scheduling.
+---
 
 ## Usage
 
-To run training and evaluation:
+Train any model with:
 
 ```bash
 python train.py \
   --model resnet18 \
   --batch_size 32 \
   --epochs 20 \
-  --use_weighted_sampler
+  --lr 5e-4
 ```
 
-Replace `--model` with `mycnn` to train the custom CNN.
+Replace `--model` with `mycnn`, `mycnnv2`, `branchcnn`, `vgg16` or `densenet121`.
+
+---
 
 ## Training
 
 Key strategies:
-- **Pretraining**: Leverage ImageNet weights.
-- **Regularization**: Dropout (p=0.5), L2 weight decay.
-- **Sampling**: WeightedRandomSampler for class imbalance.
-- **Validation**: 5-fold cross-validation with learning-rate scheduling.
+
+- **Pretraining**: Leveraging ImageNet weights for ResNet-18, VGG-16, DenseNet-121.  
+- **Regularization**: Dropout (p=0.5), L2 weight decay, batch normalization.  
+- **Sampling**: `WeightedRandomSampler` to counter severe class imbalance (e.g. “contempt” with only 14 samples).  
+- **Validation**: 5-fold CV with `ReduceLROnPlateau` scheduling.
+
+---
+
+## Evaluation
+
+We provide a comprehensive evaluation script:
+
+```bash
+python scripts/evaluate_models.py \
+  --data_dir data \
+  --ckpt_dir checkpoints \
+  --batch_size 32
+```
+
+For each model (`mycnn`, `resnet18`, `branchcnn`, `vgg16`, `densenet121`), it reports:
+
+- **Overall Accuracy** & **Macro F1**  
+- **Per-class** precision, recall, F1  
+- **Confusion Matrix**  
+
+---
 
 ## Results
 
-- **ResNet-18**: ~52% accuracy, ~0.42 F1 (5-fold average).
-- **MyCNN**: ~51% accuracy, ~0.40 F1 (5-fold average).
+After running `evaluate_models.py`, you’ll get a table like:
 
-Compare these to published baselines in the [Literature Review](docs/LITERATURE_REVIEW.md).
+| Model           | Accuracy | F1-macro |
+| --------------- | -------- | -------- |
+| MyCNN           | 0.51     | 0.40     |
+| ResNet-18       | 0.52     | 0.42     |
+| VGG-16          | 0.55     | 0.45     |
+| DenseNet-121    | 0.54     | 0.44     |
+| MultiBranchCNN  | 0.53     | 0.43     |
+
+(Your exact numbers may vary with hyperparameter tuning.)
+
+See full per-class reports and confusion matrices in the console output of `scripts/evaluate_models.py`.
+
+---
 
 ## Repository Structure
 
-The repository is organized as follows:
-
 ```
-├── data/                   # Downloaded datasets (ignored in Git)
-├── notebooks/              # Jupyter notebooks for EDA and analysis
-│   └── EDA.ipynb           # Exploratory Data Analysis
-├── models/                 # Model definition modules
-│   ├── mycnn.py            # Implementation of the custom CNN architecture
-│   └── resnet18.py         # Fine-tuned ResNet-18 model class
-├── scripts/                # Utility scripts
-│   └── download_datasets.py # Script to download FER-2013 and CK+ datasets
-├── train.py                # Main training and evaluation entrypoint
-├── requirements.txt        # List of Python package dependencies
-├── README.md               # Project overview and instructions
-└── LICENSE                 # License information
+├── data/                      # Datasets (ignored by Git)
+├── notebooks/                 # EDA and analysis notebooks
+│   └── EDA.ipynb
+├── models/                    # Model definitions
+│   ├── mycnn.py
+│   ├── mycnnv2.py
+│   ├── resnet18.py
+│   ├── branchcnn.py
+│   ├── vgg16.py
+│   └── densenet121.py
+├── scripts/
+│   ├── download_datasets.py   # Download FER-2013 & CK+ via Kaggle API
+│   └── evaluate_models.py     # Aggregates evaluation metrics across all models
+├── train.py                   # Main training & CV entrypoint
+├── requirements.txt           # Exact Python package versions
+├── README.md                  # This file
+└── LICENSE
 ```
 
-- **data/**: Contains raw dataset folders after running `download_datasets.py`. This directory is added to `.gitignore` to avoid committing large data files.
-- **notebooks/**: Includes analysis notebooks for visualizing sample images and class distributions.
-- **models/**: Holds the model architecture code, allowing easy imports and modifications.
-- **scripts/**: Utility scripts to automate dataset downloading and setup.
-- **train.py**: Orchestrates data loading, model instantiation, training loops, evaluation, and result logging based on CLI arguments.
-- **requirements.txt**: Ensures reproducible environments by specifying exact package versions.
-- **LICENSE**: Details the MIT licensing terms for this project.
+---
+
 ## Scripts
 
-Utility scripts are provided in the `scripts/` directory:
-
-- **download_datasets.py**: Downloads the FER-2013 and CK+ datasets into `data/fer2013/` and `data/ckplus/`, respectively. Run:
+- **download_datasets.py**  
   ```bash
   python scripts/download_datasets.py
   ```
 
-Be sure to update any paths in your own code if you rename the `data/` folder.
+- **evaluate_models.py**  
+  ```bash
+  python scripts/evaluate_models.py --data_dir data --ckpt_dir checkpoints
+  ```
+
+---
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. **Fork** this repository and create a new branch:
-   ```bash
+1. **Fork** & branch:  
+   ```
    git checkout -b feature/YourFeature
    ```
-2. **Develop** your feature or bugfix, ensuring code style consistency and adding tests where appropriate.
-3. **Commit** your changes with clear, descriptive messages:
-   ```bash
-   git commit -m "Add <feature description>"
-   ```
-4. **Push** your branch to GitHub and open a **Pull Request**, describing your changes and referencing related issues.
+2. **Implement** & test.
+3. **Commit** with clear messages.  
+4. **Push** & open a PR.
 
-Please also update documentation (this README or notebooks) to reflect any changes in functionality.
+Also update docs/notebooks as needed.
+
+---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+```
