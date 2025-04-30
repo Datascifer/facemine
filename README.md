@@ -1,217 +1,120 @@
-# Facial Emotion Recognition (FaceMine)
+# FaceTime: Facial Emotion Recognition
 
-An AI project that learns to identify eight different facial emotions—like happiness, anger, surprise, and sadness—by training on two large photo collections (FER-2013 and CK+) and using smart techniques to ensure even rare expressions are recognized accurately.
-
----
-
-## Table of Contents
-
-- [Features](#features)  
-- [Installation](#installation)  
-- [Dataset](#dataset)  
-- [Exploratory Data Analysis](#exploratory-data-analysis)  
-- [Models](#models)  
-- [Usage](#usage)  
-- [Training](#training)  
-- [Evaluation](#evaluation)  
-- [Results](#results)  
-- [Repository Structure](#repository-structure)  
-- [Contributing](#contributing)  
-- [License](#license)  
+FaceTime is a CNN-based facial expression recognition project designed to classify emotional states from static facial images. It leverages the FER-2013 and CK+ datasets and applies class balancing, data augmentation, and multiple CNN architectures to benchmark performance under realistic conditions.
 
 ---
 
-## Features
+## Folder Structure
 
-- **Combined Dataset**: Merges FER-2013 (in-the-wild images) and CK+ (lab-controlled images) for 8 emotion classes.  
-- **Six Architectures**:  
-  1. **MyCNN** – Baseline CNN built from scratch (2025).  
-  2. **MyCNNv2** – Expanded 3-block CNN with dynamic flattening (2025).  
-  3. **EmotionResNet18** – Fine-tuned ResNet-18 for 1×48×48 grayscale (2025).  
-  4. **Ma2024CNN** – “Convolutional Neural Networks-based Evaluation for the FER-2013 and Revised CK+ Datasets” architecture from Ma (2024).  
-  5. **EmotionVGG16** – Fine-tuned VGG-16 adapted for grayscale (2025).  
-  6. **EmotionDenseNet121** – Fine-tuned DenseNet-121 adapted for grayscale (2025).  
-- **Imbalance Mitigation**: Weighted sampling and data augmentation to handle rare classes.  
-- **Validation**: 5-fold cross-validation, hyper­parameter tuning, and learning-rate scheduling.  
-- **Unified Evaluation**: Single script reports overall accuracy, macro F1, per-class metrics, and confusion matrices.  
-
----
-
-## Installation
-
-1. **Clone the repository**  
-   ```bash
-   git clone https://github.com/yourusername/fer-emotion-recognition.git
-   cd fer-emotion-recognition
-   ```
-
-2. **Install dependencies**  
-   ```bash
-   pip install -r requirements.txt
-   ```
-
----
-
-## Dataset
-
-> **Do Not Commit Data to GitHub**  
->
-> 1. **.gitignore** includes `data/`.  
-> 2. **Download at runtime**:  
->    ```bash
->    python scripts/download_datasets.py
->    ```
-> 3. **Expected structure** under `data/`:  
->    ```
->    data/
->    ├── fer2013/
->    │   ├── train/
->    │   └── test/
->    └── ckplus/
->        └── ckeextended.csv
->    ```
-> 4. If your folders differ, update paths in `train.py` and `scripts/evaluate_models.py`.
-
----
-
-## Exploratory Data Analysis
-
-See `notebooks/EDA.ipynb` for:
-
-- Sample frames from each dataset  
-- Class distribution histograms  
-- Combined dataset summary tables  
+```
+├── checkpoints/          # Saved model weights (.pth)
+├── models/               # Custom and pretrained CNN architectures
+├── plots/                # Training and evaluation visualizations
+├── runs/                 # Logs, SMOTE stats, and output artifacts
+└── FaceTimev2.ipynb      # Main notebook for training and evaluation
+```
 
 ---
 
 ## Models
 
-We compare six model architectures for facial emotion recognition:
+Implemented architectures include:
 
-| Model           | Description                                                                                             | Source                          |
-|-----------------|---------------------------------------------------------------------------------------------------------|---------------------------------|
-| **MyCNN**       | Two conv-pool blocks + two FC layers, built from scratch.                                               | `models/mycnn.py`               |
-| **MyCNNv2**     | Three conv-pool blocks, dynamic flatten, configurable dropout, Kaiming/Xavier init.                     | `models/mycnnv2.py`             |
-| **ResNet-18**   | Pretrained ResNet-18 stem modified for 1×48×48, freeze layers except last block & head.                | `models/resnet18.py`            |
-| **Ma2024CNN**   | CNN from Ma (2024): data-driven evaluation on FER-2013 & CK+, uses normalization & augmentation.        | `models/ma2024cnn.py`           |
-| **VGG-16**      | Pretrained VGG-16 modified for grayscale input, freeze early conv blocks, new classifier head.         | `models/vgg16.py`               |
-| **DenseNet121** | Pretrained DenseNet-121 modified for grayscale, freeze all but last dense block & classifier.          | `models/densenet121.py`         |
+- `MyCNNv1–v6`: Progressive CNN variants with increasing depth
+- `ResNet18`: Pretrained ResNet adapted for grayscale FER input
+- `VGG16`: Fine-tuned VGG model with customized head
+- `DenseNet121`: Modified DenseNet for grayscale, unfrozen final block
+- `Ma2024CNN`: Benchmark deep CNN based on Ma (2024)
+- `Multi-Branch CNN`: Dual-path architecture for shape and texture features
 
-**Techniques across all models**:
-
-- **Data Augmentation**: flips, rotations, zooms  
-- **Regularization**: Dropout (p=0.5), L2 weight decay, BatchNorm  
-- **Optimization**: AdamW, learning-rate scheduling  
+All models reside in the `models/` directory and are designed to support both baseline and SMOTE-enhanced training.
 
 ---
 
-## Usage
+## Training Workflow
 
-### 1. Download datasets  
-```bash
-python scripts/download_datasets.py
-```
+Training is done via the `FaceTimev2.ipynb` notebook. The workflow includes:
 
-### 2. Train a model  
-```bash
-python train.py \
-  --model resnet18 \
-  --batch_size 32 \
-  --epochs 20 \
-  --lr 1e-3
-```
-Replace `--model` with one of `mycnn`, `mycnnv2`, `resnet18`, `ma2024cnn`, `vgg16`, or `densenet121`.
+- Preprocessing (grayscale, resize, normalization)
+- Dataset merging (FER-2013 and CK+)
+- Weighted sampling and SMOTE for imbalance
+- Data augmentation (flips, rotations, scaling)
+- Training with AdamW optimizer and early stopping
 
----
-
-## Training
-
-- **Pretraining**: leverage ImageNet weights where applicable  
-- **Sampler**: `WeightedRandomSampler` for class imbalance  
-- **Validation**: 5-fold CV, `ReduceLROnPlateau` scheduler  
+Settings:
+- Batch size: 32  
+- Max epochs: 10 (up to 50 for deep models)
+- Learning rate: `1e-3`, weight decay: `1e-4`
 
 ---
 
 ## Evaluation
 
-After training, place your best checkpoints into `checkpoints/` (e.g. `best_resnet18.pth`, `best_ma2024cnn.pth`, etc.), then:
+After training, model performance is measured by:
 
-```bash
-python scripts/evaluate_models.py \
-  --data_dir data \
-  --ckpt_dir checkpoints \
-  --batch_size 32
-```
-
-This script will, for each model:
-
-- Compute **Overall Accuracy** & **Macro F1**  
-- Print **Per-class Precision / Recall / F1**  
-- Display the **Confusion Matrix**
+- Overall accuracy
+- Macro-averaged F1 score
+- Per-class precision, recall, and F1
+- Confusion matrices
+- Comparative plots for baseline vs. SMOTE (in `plots/`)
 
 ---
 
 ## Results
 
-Here’s a sample of 5-fold cross-validation on **ResNet-18**:
+ResNet18 yielded the best overall performance:
 
-| Fold | Accuracy | F1-macro |
-|:----:|:--------:|:--------:|
-| 1    | 0.52     | 0.42     |
-| 2    | 0.50     | 0.39     |
-| 3    | 0.51     | 0.40     |
-| 4    | 0.53     | 0.42     |
-| 5    | 0.51     | 0.40     |
-| **Avg** | **0.51** | **0.41** |
+- **Accuracy**: 59.00%  
+- **F1 Score**: 53.23% (macro average)
 
-Compare against **Ma 2024 CNN** and other benchmarks listed in [docs/LITERATURE_REVIEW.md].
+Custom models (MyCNNv6, Ma2024CNN) showed strong performance post-SMOTE. Performance improved across all models with SMOTE-enhanced training.
 
 ---
 
-## Repository Structure
+## Notebook Usage
 
-```
-├── data/                    # Downloaded datasets (ignored in Git)
-├── docs/                    # Supplementary docs (e.g., literature review)
-├── models/                  # All model definition modules
-│   ├── mycnn.py
-│   ├── mycnnv2.py
-│   ├── resnet18.py
-│   ├── ma2024cnn.py
-│   ├── vgg16.py
-│   └── densenet121.py
-├── notebooks/               # Jupyter notebooks for EDA and analysis
-│   └── EDA.ipynb
-├── scripts/
-│   ├── download_datasets.py # Downloads FER-2013 & CK+ via Kaggle API
-│   └── evaluate_models.py   # Unified evaluation reporting metrics & CM
-├── train.py                 # Main training & validation entrypoint
-├── requirements.txt         # Python package dependencies
-├── README.md                # Project overview and instructions
-└── LICENSE                  # MIT license
+To run the pipeline:
+
+1. Open `FaceTimev2.ipynb` in Jupyter or VS Code
+2. Run all cells step-by-step
+3. Modify model names or training parameters at the top as needed
+
+---
+
+## Installation
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/yourusername/facetimev2.git
+cd facetimev2
+pip install -r requirements.txt
 ```
 
 ---
 
-## Contributing
+## requirements.txt
 
-We welcome contributions! Please:
+```txt
+torch>=1.13
+torchvision>=0.14
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+imblearn
+opencv-python
+tqdm
+jupyter
+```
 
-1. **Fork** & create a feature branch:
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-2. **Implement** & **test** your changes.  
-3. **Commit** with descriptive messages:
-   ```bash
-   git commit -m "Add MultiBranchCNN improvements"
-   ```
-4. **Push** & open a **Pull Request**.
-
-Remember to update docs or notebooks if functionality changes.
+> You can install via:  
+> `pip install -r requirements.txt`
 
 ---
 
 ## License
 
-This project is released under the **MIT License**. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License. See `LICENSE` for details.
+```
