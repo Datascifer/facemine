@@ -1,3 +1,4 @@
+## Model Definitions
 import torch
 import torch.nn as nn
 from torchvision import models
@@ -325,3 +326,31 @@ class Ma2024CNN(nn.Module):
         x = self.features(x)
         x = self.classifier(x)
         return x
+
+
+## Model Optimization
+model_classes = [
+    ('MyCNN',       MyCNN),
+    ('MyCNNv2',     MyCNNv2),
+    ('MyCNNv3',     MyCNNv3),
+    ('MyCNNv4',     MyCNNv4),
+    ('MyCNNv5',     MyCNNv5),
+    ('MyCNNv6',     MyCNNv6),
+    ('ResNet18',    EmotionResNet18),
+    ('VGG16',       EmotionVGG16),
+    ('DenseNet121', EmotionDenseNet121),
+    ('Ma2024CNN',   Ma2024CNN),
+]
+
+models_dict = {}
+optimizers_dict = {}
+schedulers    = {}
+
+for name, cls in model_classes:
+    m = cls(num_classes=8).to(device)
+    lr = 1e-4 if 'v6' in name.lower() else 1e-3
+    opt = optim.AdamW(m.parameters(), lr=lr, weight_decay=1e-4)
+    sch = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, 'min', patience=3, factor=0.1)
+    models_dict[name]     = m
+    optimizers_dict[name] = opt
+    schedulers[name]      = sch
