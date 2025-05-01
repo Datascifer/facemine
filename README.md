@@ -8,7 +8,7 @@ FaceTime is a CNN-based facial expression recognition project designed to classi
 
 ```
 ├── checkpoints/          # Saved model weights (.pth)
-├── models/               # Custom and pretrained CNN architectures
+├── models/               # Custom and pretrained CNN architectures (full code)
 ├── plots/                # Training and evaluation visualizations
 ├── runs/                 # Logs, SMOTE stats, and output artifacts
 └── FaceTimev2.ipynb      # Main notebook for training and evaluation
